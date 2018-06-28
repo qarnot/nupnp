@@ -201,6 +201,7 @@ func cleanup() {
 		for i := len(devices.d) - 1; i >= 0; i-- {
 			d := devices.d[i]
 			if time.Since(d.Added) > lifetime {
+				log.Println("deleting", devices.d[i].InternalAddress, "(timeout)")
 				devices.d = append(devices.d[:i], devices.d[i+1:]...)
 			}
 		}
