@@ -19,7 +19,7 @@ const lifetime time.Duration = 24 * time.Hour
 const httpAddr = ":8180"
 
 var devices struct {
-	sync.Mutex
+	sync.RWMutex
 	d []Device
 }
 
@@ -193,8 +193,8 @@ func ListDevices(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	devices.Lock()
-	defer devices.Unlock()
+	devices.RLock()
+	defer devices.RUnlock()
 
 	ds := devicesFor(ea)
 	w.Header().Set("Content-Type", "application/json")
