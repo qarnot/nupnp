@@ -21,6 +21,7 @@ var (
 	lifetime = 24 * time.Hour
 	httpAddr = ":8180"
 	dumpPath = ""
+	proxy = false
 )
 
 var devices struct {
@@ -40,6 +41,7 @@ func main() {
 	flag.DurationVar(&lifetime, "lifetime", lifetime, "Maximal time an object will stay before")
 	flag.StringVar(&httpAddr, "bind", httpAddr, "Bind to the given address:port")
 	flag.StringVar(&dumpPath, "dump", dumpPath, "Location where store/load devices' dumps between restarts")
+	flag.BoolVar(&proxy, "proxy", proxy, "Indicate nupnp is behind a reverse-proxy")
 	flag.Parse()
 
 	if _, err := os.Stat(dumpPath); dumpPath == "" || os.IsNotExist(err) {
@@ -181,16 +183,15 @@ func RegisterDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if proxy was configured.
+	if xrealip := r.Header.Get("x-real-ip"); proxy && xrealip != "" {
+		ea = xrealip
+	}
+
 	if ea == "127.0.0.1" || ea == "::1" {
-		xrealip := r.Header.Get("x-real-ip")
-		if xrealip != "" {
-			ea = xrealip
-		} else {
-			log.Println(ea, "tried to add an address, this can happen when proxy is not configured correctly.")
-			http.Error(w, `Host `+ea+` is not allowed to register devices`, http.StatusBadRequest)
-			http.NotFound(w, r)
-			return
-		}
+		log.Println(ea, "tried to add an address, this can happen when proxy is not configured correctly.")
+		http.Error(w, `Host `+ea+` is not allowed to register devices`, http.StatusBadRequest)
+		http.NotFound(w, r)
+		return
 	}
 
 	devices.Lock()
@@ -232,15 +233,14 @@ func ListDevices(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if proxy was configured.
+	if xrealip := r.Header.Get("x-real-ip"); proxy && xrealip != "" {
+		ea = xrealip
+	}
+
 	if ea == "127.0.0.1" || ea == "::1" {
-		xrealip := r.Header.Get("x-real-ip")
-		if xrealip != "" {
-			ea = xrealip
-		} else {
-			log.Println(ea, "tried to access an address, this can happen when proxy is not configured correctly.")
-			http.NotFound(w, r)
-			return
-		}
+		log.Println(ea, "tried to access an address, this can happen when proxy is not configured correctly.")
+		http.NotFound(w, r)
+		return
 	}
 
 	devices.RLock()

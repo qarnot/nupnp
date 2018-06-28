@@ -30,9 +30,6 @@ http://localhost:8180/api/devices
 * Should port be inside address or separate -> separate makes scripting easier
 * Should the user be able to provide full fledged address?
 
-## TODO
-- [ ] Proxy should be a flag
-
 ## Restarting demon
 `go install; killall nupnp; nohup nupnp &`
 
