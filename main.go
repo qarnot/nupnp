@@ -205,7 +205,17 @@ func ListDevices(w http.ResponseWriter, r *http.Request) {
 
 func cleanup() {
 	for {
-		time.Sleep(time.Second * 5)
+		firstEvent := time.Now()
+		devices.RLock()
+		for _, d := range devices.d {
+			if firstEvent.After(d.Added) {
+				firstEvent = d.Added
+			}
+		}
+		devices.RUnlock()
+
+		time.Sleep(firstEvent.Add(lifetime).Add(time.Second).Sub(time.Now()))
+
 		devices.Lock()
 		for i := len(devices.d) - 1; i >= 0; i-- {
 			d := devices.d[i]
