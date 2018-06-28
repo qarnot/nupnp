@@ -131,13 +131,13 @@ func RegisterDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if proxy was configured.
-	if ea == "127.0.0.1" {
+	if ea == "127.0.0.1" || ea == "::1" {
 		xrealip := r.Header.Get("x-real-ip")
 		if xrealip != "" {
 			ea = xrealip
 		} else {
-			log.Println("127.0.0.1 tried to add an address, this can happen when proxy is not configured correctly.")
-			http.Error(w, `Host 127.0.0.1 is not allowed to register devices`, http.StatusBadRequest)
+			log.Println(ea, "tried to add an address, this can happen when proxy is not configured correctly.")
+			http.Error(w, `Host `+ea+` is not allowed to register devices`, http.StatusBadRequest)
 			http.NotFound(w, r)
 			return
 		}
@@ -173,12 +173,12 @@ func ListDevices(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if proxy was configured.
-	if ea == "127.0.0.1" {
+	if ea == "127.0.0.1" || ea == "::1" {
 		xrealip := r.Header.Get("x-real-ip")
 		if xrealip != "" {
 			ea = xrealip
 		} else {
-			log.Println("127.0.0.1 tried to access an address, this can happen when proxy is not configured correctly.")
+			log.Println(ea, "tried to access an address, this can happen when proxy is not configured correctly.")
 			http.NotFound(w, r)
 			return
 		}
