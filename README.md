@@ -49,5 +49,16 @@ proxy /api/register localhost:8180 {
 }
 ```
 
+## nginx Proxy configuration
+```
+	location / {
+	    proxy_pass       http://localhost:8180;
+	    proxy_set_header X-Forwarded-Proto $scheme;
+	    proxy_set_header X-Forwarded-For $host;
+	    proxy_set_header X-Real-IP $remote_addr;
+	    proxy_set_header Host $host;
+	}
+```
+
 ## License
 [MIT](https://tldrlegal.com/license/mit-license)
