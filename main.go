@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -17,6 +18,7 @@ import (
 
 const lifetime time.Duration = 24 * time.Hour
 const httpAddr = ":8180"
+const dumpPath = "nupnp.dump"
 
 var devices struct {
 	sync.RWMutex
@@ -32,7 +34,15 @@ type Device struct {
 }
 
 func main() {
-	devices.d = make([]Device, 0)
+	if _, err := os.Stat(dumpPath); os.IsNotExist(err) {
+		devices.d = make([]Device, 0)
+	} else {
+		log.Println("Resoring states from file: ", dumpPath)
+		devices.d, err = loadDevices(dumpPath)
+		if err != nil {
+			log.Fatal("Unable to load saved states:", err)
+		}
+	}
 
 	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {})
 	http.HandleFunc("/api/register", RegisterDevice)
@@ -58,9 +68,41 @@ func main() {
 	// Wait shutdown signal
 	<-interrupt
 
+	log.Print("Saving registered hosts...")
+	if err := saveDevices(dumpPath); err != nil {
+		log.Fatal("error:", err)
+	}
+	log.Println("done")
+
 	log.Print("The service is shutting down...")
 	srv.Shutdown(context.Background())
 	log.Println("done")
+}
+
+func saveDevices(dumpPath string) error {
+	fd, err := os.Create(dumpPath)
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
+
+	devices.RLock()
+	defer devices.RUnlock()
+
+	return gob.NewEncoder(fd).Encode(devices.d)
+}
+
+func loadDevices(dumpPath string) (d []Device, err error) {
+	var fd *os.File
+	fd, err = os.Open(dumpPath)
+	if err != nil {
+		return
+	}
+	defer fd.Close()
+
+	err = gob.NewDecoder(fd).Decode(&d)
+
+	return
 }
 
 func findDevice(ia string, ea string) (int, bool) {
