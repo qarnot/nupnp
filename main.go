@@ -150,7 +150,7 @@ func RegisterDevice(w http.ResponseWriter, r *http.Request) {
 		devices.d[i].Name = t.Name
 		devices.d[i].Port = t.Port
 		devices.d[i].Added = time.Now()
-		log.Println(time.Now(), "updated", t.Address)
+		log.Println("updated", t.Address)
 	} else {
 		devices.d = append(devices.d, Device{
 			ExternalAddress: ea,
@@ -159,7 +159,7 @@ func RegisterDevice(w http.ResponseWriter, r *http.Request) {
 			Name:            t.Name,
 			Added:           time.Now(),
 		})
-		log.Println(time.Now(), "added", t.Address)
+		log.Println("added", t.Address)
 	}
 
 	fmt.Fprintf(w, "Successfully added, visit https://nupnp.com for more.\n")
