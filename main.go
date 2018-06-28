@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -37,9 +41,26 @@ func main() {
 
 	go cleanup()
 
+	// Prepare graceful shutdown
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+
+	srv := &http.Server{
+		Addr: httpAddr,
+	}
+
+	// Serve content
+	go func() {
+		log.Fatal(srv.ListenAndServe())
+	}()
 	fmt.Println("listen on", httpAddr)
-	// Note: use TLS
-	log.Fatal(http.ListenAndServe(httpAddr, nil))
+
+	// Wait shutdown signal
+	<-interrupt
+
+	log.Print("The service is shutting down...")
+	srv.Shutdown(context.Background())
+	log.Println("done")
 }
 
 func findDevice(ia string, ea string) (int, bool) {
