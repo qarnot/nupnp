@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/gob"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -16,9 +17,11 @@ import (
 	"time"
 )
 
-const lifetime time.Duration = 24 * time.Hour
-const httpAddr = ":8180"
-const dumpPath = "nupnp.dump"
+var (
+	lifetime = 24 * time.Hour
+	httpAddr = ":8180"
+	dumpPath = ""
+)
 
 var devices struct {
 	sync.RWMutex
@@ -34,7 +37,12 @@ type Device struct {
 }
 
 func main() {
-	if _, err := os.Stat(dumpPath); os.IsNotExist(err) {
+	flag.DurationVar(&lifetime, "lifetime", lifetime, "Maximal time an object will stay before")
+	flag.StringVar(&httpAddr, "bind", httpAddr, "Bind to the given address:port")
+	flag.StringVar(&dumpPath, "dump", dumpPath, "Location where store/load devices' dumps between restarts")
+	flag.Parse()
+
+	if _, err := os.Stat(dumpPath); dumpPath == "" || os.IsNotExist(err) {
 		devices.d = make([]Device, 0)
 	} else {
 		log.Println("Resoring states from file: ", dumpPath)
