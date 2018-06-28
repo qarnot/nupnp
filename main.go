@@ -162,7 +162,16 @@ func RegisterDevice(w http.ResponseWriter, r *http.Request) {
 		log.Println("added", t.Address)
 	}
 
-	fmt.Fprintf(w, "Successfully added, visit https://nupnp.com for more.\n")
+	scheme := r.Header.Get("x-forwarded-proto")
+	if scheme == "" {
+		scheme = "https"
+	}
+	host := r.Header.Get("host")
+	if host == "" {
+		host = "nupnp.com"
+	}
+
+	fmt.Fprintf(w, "Successfully added, visit %s://%s for more.\n", scheme, host)
 }
 
 func ListDevices(w http.ResponseWriter, r *http.Request) {
